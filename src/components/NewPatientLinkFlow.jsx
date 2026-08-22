@@ -4,6 +4,7 @@ import CopyToWhatsAppButton from './CopyToWhatsAppButton.jsx'
 import { adminFetch } from '../utils/adminApi.js'
 import { groupSlotsByDay } from '../utils/candidateSlots.js'
 import { buildPatientPackageWhatsAppText } from '../utils/whatsapp.js'
+import { cleanPersonName } from '../utils/name.js'
 
 export default function NewPatientLinkFlow({ settings, onDone, onCancel }) {
   const [step, setStep] = useState('name') // name -> widget -> share
@@ -27,7 +28,7 @@ export default function NewPatientLinkFlow({ settings, onDone, onCancel }) {
     try {
       const data = await adminFetch('/api/admin/patient-links', {
         method: 'POST',
-        body: JSON.stringify({ patient_name: patientName.trim(), slots: selected }),
+        body: JSON.stringify({ patient_name: cleanPersonName(patientName), slots: selected }),
       })
       setResult(data)
       setStep('share')
@@ -64,7 +65,7 @@ export default function NewPatientLinkFlow({ settings, onDone, onCancel }) {
                 type="button"
                 disabled={!patientName.trim()}
                 onClick={() => {
-                  setPatientName((n) => n.trim())
+                  setPatientName((n) => cleanPersonName(n))
                   setStep('widget')
                 }}
                 className="flex-1 rounded-lg bg-indigo-600 text-white py-2 text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"

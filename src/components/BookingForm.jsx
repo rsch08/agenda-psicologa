@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { formatSlotDateTime } from '../utils/format.js'
+import { cleanPersonName } from '../utils/name.js'
 
 export default function BookingForm({
   slot,
@@ -15,7 +16,7 @@ export default function BookingForm({
 
   function handleSubmit(e) {
     e.preventDefault()
-    onConfirm({ name: name.trim(), email: email.trim() })
+    onConfirm({ name: cleanPersonName(name), email: email.trim() })
   }
 
   return (
