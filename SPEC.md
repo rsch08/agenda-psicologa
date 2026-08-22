@@ -1,108 +1,88 @@
-# Agenda para Psicóloga — Spec v1
+# Agenda para Psicóloga — Spec v2
 
 ## Problema que resuelve
-La psicóloga (novia de Casta) agenda sus sesiones a mano por WhatsApp: cada
-paciente pregunta disponibilidad, ella revisa su Google Calendar, contesta,
-y a veces hay choques o idas y vueltas. Se necesita una versión simplificada
-de Calendly, hecha a medida:
+La psicóloga agenda sus sesiones a mano por WhatsApp. Quiere automatizar
+*compartir* horarios y *agendar*, pero sin perder el control fino de a
+quién le ofrece qué — su Google Calendar no refleja el 100% de sus
+compromisos reales (otras pacientes, pendientes personales), así que
+calcular disponibilidad de forma automática no es confiable. Ella prefiere
+elegir a mano, por paciente, exactamente qué horarios ofrecer.
 
-1. Ella configura **una sola vez** qué horarios de la semana quiere ofrecer.
-2. El sistema cruza esos horarios con su Google Calendar real (para no
-   ofrecer horas que ya están ocupadas).
-3. El paciente entra a un link público, ve **todos los horarios disponibles
-   de una sola vista** (no día por día, como si estuvieran "embebidos" en un
-   correo) y agenda directo.
-4. El paciente puede copiar esos horarios en un formato listo para pegar en
+## Cómo funciona (v2)
+1. La psicóloga entra a `/admin`, se loguea con su cuenta de Google (solo
+   correos autorizados) y conecta su calendario real una sola vez.
+2. Por cada paciente nuevo: clic en "Nuevo horario" → escribe el nombre →
+   ve un widget con su calendario real (los huecos ocupados salen
+   tachados) → hace clic a mano en los horarios que quiere ofrecer.
+3. Se genera un link único para ese paciente (sin contraseña, token
+   imposible de adivinar) con una pantalla lista para compartir por
    WhatsApp.
+4. El paciente entra a su link, ve solo esos horarios, agenda uno — Google
+   Calendar le manda la invitación automática. Puede volver y cambiar de
+   horario entre los que le tocaron (se cancela el evento anterior).
+
+No existe un link público genérico: cada paciente tiene el suyo, curado a
+mano.
 
 ## Stack
-- **Frontend**: React + Vite + Tailwind, con React Router (página pública de
-  agendado + página de configuración)
-- **Backend**: funciones serverless de Vercel (`/api/*`) — necesarias porque
-  hablar con la API de Google Calendar requiere manejar `client_secret` y
-  refresh tokens, que nunca deben llegar al navegador
-- **DB**: Supabase (Postgres) — pero a diferencia del proyecto anterior, el
-  navegador **nunca** habla directo con Supabase. Todo pasa por `/api/*`
-  usando la service role key del lado del servidor. Esto evita exponer
-  tokens de Google o el passcode de admin.
-- **Calendario**: Google Calendar API (OAuth2 + `freebusy.query` +
-  `events.insert`)
-- **Deploy**: Vercel (funciones serverless + frontend estático)
+- **Frontend**: React + Vite + Tailwind, React Router
+- **Backend**: funciones serverless de Vercel (`/api/*`)
+- **DB**: Supabase (Postgres) — solo accesible server-side con la service
+  role key, RLS cerrado
+- **Calendario**: Google Calendar API — dos flujos OAuth separados (login
+  de identidad vs. conexión del calendario), para que loguearse a probar el
+  panel no reemplace accidentalmente el calendario conectado
+- **Auth del admin**: cookie de sesión firmada (HMAC), emitida tras un
+  login con Google cuyo correo esté en `ADMIN_EMAILS`
+- **Deploy**: Vercel
 
-## Modelo de datos (MVP)
+## Modelo de datos
 ```
 settings (fila única)
- - session_duration_minutes, buffer_minutes, timezone
- - min_notice_hours, max_days_ahead
- - psychologist_name
+ - session_duration_minutes, timezone, psychologist_name
 
-availability_rules (reglas semanales recurrentes)
- - id, weekday (0=domingo..6=sábado), start_time, end_time, active
-
-google_tokens (fila única — credenciales OAuth de la psicóloga)
+google_tokens (fila única — el calendario conectado)
  - access_token, refresh_token, expiry_date, connected_email, calendar_id
 
-appointments (citas agendadas)
- - id, patient_name, patient_email, patient_phone
- - start_time, end_time, google_event_id, status, notes, created_at
+patient_links (un paquete de horarios armado a mano para un paciente)
+ - id, patient_name, token (único, va en la URL), created_at
+
+offered_slots (los horarios exactos elegidos para ese paciente)
+ - id, patient_link_id, start_time, end_time
+
+appointments (la cita agendada, si el paciente ya escogió)
+ - id, patient_link_id, offered_slot_id, patient_name, patient_email,
+   patient_phone, start_time, end_time, google_event_id, status
 ```
 
-## Cómo se calcula la disponibilidad
-1. Tomar `availability_rules` activas → generar franjas candidatas por día,
-   según `session_duration_minutes` + `buffer_minutes`, en la `timezone`
-   configurada.
-2. Descartar franjas que empiecen antes de `ahora + min_notice_hours`.
-3. Descartar franjas que choquen con eventos ocupados de Google Calendar
-   (`freebusy.query`) o con citas ya guardadas en `appointments`.
-4. Devolver el resultado agrupado por día, para los próximos
-   `max_days_ahead` días — esta es la lista que ve el paciente en una sola
-   vista, sin tener que hacer clic día por día.
-
-## Features — MVP (fase 1)
-1. **Config (`/admin`)**, protegida con passcode simple (`ADMIN_PASSCODE`):
-   - Conectar/desconectar Google Calendar (OAuth2)
-   - Editor de horarios semanales (un rango por día activo)
-   - Ajustes: duración de sesión, buffer entre citas, timezone, aviso mínimo
-     en horas, cuántos días hacia adelante mostrar
-   - Lista de próximas citas agendadas (solo lectura)
-2. **Página pública de agendado (`/`)**:
-   - Todos los horarios disponibles de los próximos N días, agrupados por
-     día, visibles de una sola vez (sin navegar día por día)
-   - Botón "Copiar para WhatsApp" que arma un texto con los horarios +
-     el link de la página, listo para pegar en un chat
-   - Al escoger un horario: formulario corto (nombre, correo, teléfono
-     opcional) → confirmación
-   - Al confirmar, Google Calendar le manda automáticamente una invitación
-     por correo al paciente (usando `sendUpdates: all` en el evento) — no
-     hace falta un servicio de correo aparte para el MVP
-3. **Prevención de choques**: antes de guardar la cita se revalida contra
-   Google Calendar + citas ya guardadas (mitiga condiciones de carrera si
-   dos personas agendan casi al mismo tiempo).
+## Features — MVP (v2, construido)
+1. Login de admin con Google, restringido por lista de correos
+2. Conexión del calendario real, independiente de quién esté logueado
+3. Widget de calendario clickeable (semana navegable, eventos reales
+   tachados) para armar el paquete de un paciente
+4. Link único por paciente, sin contraseña
+5. Compartir por WhatsApp (copiar texto o abrir wa.me con el mensaje
+   armado)
+6. Página del paciente: ve sus horarios asignados, agenda, puede cambiar de
+   opinión entre los mismos horarios
+7. Invitación automática de Google Calendar al paciente al agendar (sin
+   Google Meet — nunca se pide `conferenceData` al crear el evento)
+8. Log en el admin de a qué paciente se le mandó qué y si ya agendó
 
 ## Features — Fase 2 (después del MVP)
-- Más de un rango horario por día (ej. mañana y tarde separados)
-- Cancelar/reagendar cita desde un link que le llega al paciente
-- Recordatorio automático 24h antes (cron de Vercel + correo/WhatsApp)
-- Autenticación real de la psicóloga (hoy es un passcode único en vez de
-  login), pensado para si algún día hay más de una profesional usando el
-  sistema
-- Bloqueo manual de fechas puntuales (vacaciones, día festivo) sin tener
-  que tocar Google Calendar
-- Botón "Compartir por WhatsApp" que abre directo `wa.me` con el texto
-  precargado, además de copiar al portapapeles
-
-## Riesgo #1 identificado
-Que la conexión con Google Calendar se desconfigure (token expirado o
-revocado) y la página siga mostrando horarios "disponibles" que en
-realidad ya están ocupados. Mitigación: si `google_tokens` no tiene una
-conexión válida, la página de admin lo muestra en rojo de forma visible, y
-`/api/availability` intenta refrescar el token en cada consulta.
+- Rango horario del widget configurable (hoy fijo 7am–9pm)
+- Cancelar un paquete ya creado desde el admin
+- Horarios mostrados en la zona horaria del navegador del paciente, no solo
+  la de la psicóloga
+- Recordatorio automático 24h antes (cron de Vercel)
+- **Multi-tenant**: cada psicóloga con su propia cuenta y su propio
+  calendario conectado, para poder vender esto a otras profesionales. Hoy
+  el modelo asume una sola psicóloga (filas únicas de `settings` y
+  `google_tokens`) — para generalizar hace falta agregar un "dueño" a cada
+  tabla y aislar los datos por cuenta.
 
 ## Siguiente paso práctico
-1. Crear proyecto en Supabase y correr `supabase/schema.sql`
-2. Crear credenciales OAuth de Google Cloud Console (ver README)
-3. Configurar variables de entorno (Supabase + Google + `ADMIN_PASSCODE`)
-4. `npm install` → `npm run dev` para probar local
-5. Deploy en Vercel, agregar las mismas variables de entorno ahí
-6. Entrar a `/admin`, conectar Google Calendar, definir horarios
-7. Compartir el link público (`/`) con las pacientes
+1. `service_role` key de Supabase → variables de entorno
+2. Credenciales OAuth de Google (un solo redirect URI para los dos flujos)
+3. `ADMIN_EMAILS` + `SESSION_SECRET` en las variables de entorno
+4. Deploy en Vercel, login, conectar calendario, primer "Nuevo horario"

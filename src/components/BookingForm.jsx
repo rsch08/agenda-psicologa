@@ -1,8 +1,16 @@
 import { useState } from 'react'
 import { formatSlotDateTime } from '../utils/format.js'
 
-export default function BookingForm({ slot, timezone, onCancel, onConfirm, submitting, error }) {
-  const [name, setName] = useState('')
+export default function BookingForm({
+  slot,
+  timezone,
+  onCancel,
+  onConfirm,
+  submitting,
+  error,
+  initialName = '',
+}) {
+  const [name, setName] = useState(initialName)
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
 

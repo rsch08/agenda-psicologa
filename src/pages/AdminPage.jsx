@@ -1,71 +1,61 @@
 import { useEffect, useState } from 'react'
-import PasscodeGate from '../components/PasscodeGate.jsx'
 import GoogleConnectCard from '../components/GoogleConnectCard.jsx'
-import ScheduleForm from '../components/ScheduleForm.jsx'
-import AppointmentsList from '../components/AppointmentsList.jsx'
+import SettingsForm from '../components/SettingsForm.jsx'
+import PatientLinksList from '../components/PatientLinksList.jsx'
+import NewPatientLinkFlow from '../components/NewPatientLinkFlow.jsx'
 import { adminFetch } from '../utils/adminApi.js'
 
-const STORAGE_KEY = 'agenda_admin_passcode'
-
 export default function AdminPage() {
-  const [passcode, setPasscode] = useState(() => localStorage.getItem(STORAGE_KEY) || '')
-  const [authorized, setAuthorized] = useState(false)
   const [checking, setChecking] = useState(true)
-  const [gateError, setGateError] = useState(null)
+  const [authorized, setAuthorized] = useState(false)
 
   const [settings, setSettings] = useState(null)
-  const [rules, setRules] = useState([])
   const [googleStatus, setGoogleStatus] = useState(null)
-  const [appointments, setAppointments] = useState([])
+  const [links, setLinks] = useState([])
 
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState(null)
   const [disconnecting, setDisconnecting] = useState(false)
+  const [showNewFlow, setShowNewFlow] = useState(false)
+
+  const params = new URLSearchParams(window.location.search)
+  const errorParam = params.get('error')
 
   useEffect(() => {
-    if (passcode) tryPasscode(passcode)
-    else setChecking(false)
+    loadAll()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const googleParam = new URLSearchParams(window.location.search).get('google')
-
-  async function tryPasscode(code) {
+  async function loadAll() {
     setChecking(true)
-    setGateError(null)
     try {
-      const [settingsData, statusData, appointmentsData] = await Promise.all([
-        adminFetch('/api/admin/settings', code),
-        adminFetch('/api/admin/google-status', code),
-        adminFetch('/api/admin/appointments', code),
+      const [settingsData, statusData, linksData] = await Promise.all([
+        adminFetch('/api/admin/settings'),
+        adminFetch('/api/admin/google-status'),
+        adminFetch('/api/admin/patient-links'),
       ])
       setSettings(settingsData.settings)
-      setRules(settingsData.rules)
       setGoogleStatus(statusData)
-      setAppointments(appointmentsData.appointments)
-      setPasscode(code)
-      localStorage.setItem(STORAGE_KEY, code)
+      setLinks(linksData.links)
       setAuthorized(true)
     } catch (err) {
-      localStorage.removeItem(STORAGE_KEY)
       setAuthorized(false)
-      setGateError(err.status === 401 ? 'Passcode incorrecto.' : err.message)
+      if (err.status !== 401) console.error(err)
     } finally {
       setChecking(false)
     }
   }
 
-  async function handleSave({ settings: newSettings, rules: newRules }) {
+  async function handleSaveSettings(newSettings) {
     setSaving(true)
     setSaveError(null)
     try {
-      await adminFetch('/api/admin/settings', passcode, {
+      await adminFetch('/api/admin/settings', {
         method: 'POST',
-        body: JSON.stringify({ settings: newSettings, rules: newRules }),
+        body: JSON.stringify(newSettings),
       })
-      const data = await adminFetch('/api/admin/settings', passcode)
+      const data = await adminFetch('/api/admin/settings')
       setSettings(data.settings)
-      setRules(data.rules)
     } catch (err) {
       setSaveError(err.message)
     } finally {
@@ -76,7 +66,7 @@ export default function AdminPage() {
   async function handleDisconnect() {
     setDisconnecting(true)
     try {
-      await adminFetch('/api/admin/google-status', passcode, { method: 'DELETE' })
+      await adminFetch('/api/admin/google-status', { method: 'DELETE' })
       setGoogleStatus({ connected: false })
     } catch (err) {
       setSaveError(err.message)
@@ -85,50 +75,95 @@ export default function AdminPage() {
     }
   }
 
-  if (!authorized) {
-    return <PasscodeGate onSubmit={tryPasscode} error={gateError} checking={checking} />
+  async function refreshLinks() {
+    const data = await adminFetch('/api/admin/patient-links')
+    setLinks(data.links)
   }
 
-  const bookingUrl = `${window.location.origin}/`
+  if (checking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-sm text-slate-500">Cargando…</p>
+      </div>
+    )
+  }
+
+  if (!authorized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="max-w-sm w-full bg-white rounded-xl shadow p-6 text-center space-y-3">
+          <h1 className="text-lg font-semibold">Agenda Psicóloga</h1>
+          <p className="text-sm text-slate-500">Panel de administración.</p>
+          {errorParam === 'unauthorized' && (
+            <p className="text-sm text-red-600">
+              Esa cuenta de Google no tiene acceso a este panel.
+            </p>
+          )}
+          {errorParam === 'google' && (
+            <p className="text-sm text-red-600">Hubo un problema iniciando sesión. Intenta de nuevo.</p>
+          )}
+          <a
+            href="/api/auth/login"
+            className="inline-flex w-full items-center justify-center rounded-lg bg-indigo-600 text-white py-2 text-sm font-medium hover:bg-indigo-700"
+          >
+            Iniciar sesión con Google
+          </a>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen p-4 sm:p-8">
       <div className="max-w-2xl mx-auto space-y-6">
-        <header>
-          <h1 className="text-xl font-semibold">Configuración</h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Link público para pacientes:{' '}
-            <a href={bookingUrl} className="text-indigo-600 hover:underline">
-              {bookingUrl}
-            </a>
-          </p>
-          {googleParam === 'connected' && (
-            <p className="text-sm text-emerald-700 mt-1">Google Calendar conectado correctamente.</p>
-          )}
-          {googleParam === 'error' && (
-            <p className="text-sm text-red-600 mt-1">
-              Hubo un problema conectando Google Calendar. Intenta de nuevo.
-            </p>
-          )}
+        <header className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-semibold">Agenda Psicóloga</h1>
+            <p className="text-sm text-slate-500 mt-1">Panel de administración</p>
+          </div>
+          <a href="/api/auth/logout" className="text-sm text-slate-500 hover:underline">
+            Cerrar sesión
+          </a>
         </header>
+
+        {errorParam === 'google' && (
+          <p className="text-sm text-red-600">Hubo un problema con Google Calendar. Intenta de nuevo.</p>
+        )}
+
+        <button
+          type="button"
+          onClick={() => setShowNewFlow(true)}
+          className="w-full rounded-xl bg-indigo-600 text-white py-4 text-base font-semibold hover:bg-indigo-700 shadow"
+        >
+          + Nuevo horario
+        </button>
 
         <GoogleConnectCard
           status={googleStatus}
-          passcode={passcode}
           onDisconnect={handleDisconnect}
           disconnecting={disconnecting}
         />
 
-        <ScheduleForm
+        <PatientLinksList links={links} timezone={settings?.timezone} />
+
+        <SettingsForm
           initialSettings={settings}
-          initialRules={rules}
-          onSave={handleSave}
+          onSave={handleSaveSettings}
           saving={saving}
           saveError={saveError}
         />
-
-        <AppointmentsList appointments={appointments} timezone={settings?.timezone} />
       </div>
+
+      {showNewFlow && (
+        <NewPatientLinkFlow
+          settings={settings}
+          onCancel={() => setShowNewFlow(false)}
+          onDone={() => {
+            setShowNewFlow(false)
+            refreshLinks()
+          }}
+        />
+      )}
     </div>
   )
 }

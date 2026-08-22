@@ -1,11 +1,11 @@
 import { formatDayLabel, formatSlotTime, formatSlotDateTime } from './format.js'
 
-export function buildAvailabilityWhatsAppText({ days, timezone, psychologistName, bookingUrl }) {
+export function buildPatientPackageWhatsAppText({ patientName, days, timezone, psychologistName, url }) {
   const lines = []
   lines.push(
-    psychologistName
-      ? `Horarios disponibles con ${psychologistName}:`
-      : 'Horarios disponibles para agendar:',
+    `Hola ${patientName}, estos son los horarios que tengo disponibles para tu sesión${
+      psychologistName ? ` con ${psychologistName}` : ''
+    }:`,
   )
   lines.push('')
 
@@ -15,7 +15,7 @@ export function buildAvailabilityWhatsAppText({ days, timezone, psychologistName
   }
 
   lines.push('')
-  lines.push(`Agenda aquí: ${bookingUrl}`)
+  lines.push(`Agenda aquí: ${url}`)
   return lines.join('\n')
 }
 

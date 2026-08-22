@@ -1,8 +1,8 @@
-export async function adminFetch(path, passcode, options = {}) {
-  const headers = { ...(options.headers || {}), 'x-admin-passcode': passcode }
+export async function adminFetch(path, options = {}) {
+  const headers = { ...(options.headers || {}) }
   if (options.body) headers['Content-Type'] = 'application/json'
 
-  const res = await fetch(path, { ...options, headers })
+  const res = await fetch(path, { ...options, headers, credentials: 'same-origin' })
   const data = await res.json().catch(() => ({}))
 
   if (!res.ok) {
