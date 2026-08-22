@@ -17,16 +17,19 @@ navegar día por día) y agendan directo. Ver `SPEC.md` para el spec completo.
 - Google Calendar API (OAuth2) para leer disponibilidad real y crear el
   evento cuando alguien agenda
 
-## 1. Crear el proyecto de Supabase
+## 1. Proyecto de Supabase
 
-1. Crea un proyecto gratuito en [supabase.com](https://supabase.com).
-2. Abre el **SQL Editor** y ejecuta el contenido de `supabase/schema.sql`.
-   Esto crea las tablas `settings`, `availability_rules`, `google_tokens` y
-   `appointments`, con RLS cerrado (solo la service role key puede
-   leer/escribir, porque el navegador nunca las toca directamente).
-3. En **Project Settings → API**, copia la `Project URL` y la
-   **`service_role` key** (no la `anon` key — esta app no usa la anon key
-   para nada).
+Ya está creado: proyecto `agenda-psicologa` (`https://mmqfsbtnejbbmcgmpvas.supabase.co`),
+con `supabase/schema.sql` ya aplicado (tablas `settings`, `availability_rules`,
+`google_tokens` y `appointments`, con RLS cerrado — solo la `service_role`
+key puede leer/escribir, porque el navegador nunca las toca directamente).
+
+Lo único que falta es que saques la `service_role` key tú mismo — por
+seguridad no se puede obtener por API/MCP:
+
+1. Entra a [supabase.com/dashboard](https://supabase.com/dashboard) → proyecto `agenda-psicologa`.
+2. **Project Settings → API** → copia la key **`service_role`** (⚠️ no la `anon`/`publishable` — esta app no usa esa).
+3. Guárdala para el paso 3 (variables de entorno).
 
 ## 2. Crear credenciales OAuth de Google
 
@@ -53,9 +56,9 @@ Completa `.env`:
 
 | Variable | De dónde sale |
 |---|---|
-| `VITE_SUPABASE_URL` | Project URL de Supabase (no se usa hoy, pero se deja lista) |
-| `SUPABASE_URL` | Project URL de Supabase |
-| `SUPABASE_SERVICE_ROLE_KEY` | `service_role` key de Supabase |
+| `VITE_SUPABASE_URL` | ya viene prellenada en `.env.example` (no se usa hoy, pero se deja lista) |
+| `SUPABASE_URL` | ya viene prellenada en `.env.example` |
+| `SUPABASE_SERVICE_ROLE_KEY` | la `service_role` key que sacaste en el paso 1 |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | paso 2 |
 | `GOOGLE_REDIRECT_URI` | `http://localhost:5173/api/google-callback` en local |
 | `APP_BASE_URL` | `http://localhost:5173` en local |
