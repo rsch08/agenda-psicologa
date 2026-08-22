@@ -63,7 +63,10 @@ export default function NewPatientLinkFlow({ settings, onDone, onCancel }) {
               <button
                 type="button"
                 disabled={!patientName.trim()}
-                onClick={() => setStep('widget')}
+                onClick={() => {
+                  setPatientName((n) => n.trim())
+                  setStep('widget')
+                }}
                 className="flex-1 rounded-lg bg-indigo-600 text-white py-2 text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
               >
                 Siguiente

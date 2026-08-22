@@ -12,11 +12,10 @@ export default function BookingForm({
 }) {
   const [name, setName] = useState(initialName)
   const [email, setEmail] = useState('')
-  const [phone, setPhone] = useState('')
 
   function handleSubmit(e) {
     e.preventDefault()
-    onConfirm({ name: name.trim(), email: email.trim(), phone: phone.trim() })
+    onConfirm({ name: name.trim(), email: email.trim() })
   }
 
   return (
@@ -47,17 +46,6 @@ export default function BookingForm({
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Teléfono (opcional)
-            </label>
-            <input
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
-
           {error && <p className="text-sm text-red-600">{error}</p>}
 
           <div className="flex gap-2 pt-2">

@@ -37,14 +37,14 @@ export default function PatientBookingPage() {
     }
   }
 
-  async function handleConfirm({ name, email, phone }) {
+  async function submitBooking(offeredSlotId, { name, email }) {
     setSubmitting(true)
     setSubmitError(null)
     try {
       const res = await fetch(`/api/patient/${token}/book`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ offered_slot_id: selectedSlot.id, name, email, phone }),
+        body: JSON.stringify({ offered_slot_id: offeredSlotId, name, email }),
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error || 'No se pudo agendar la cita.')
@@ -55,6 +55,21 @@ export default function PatientBookingPage() {
       setSubmitError(err.message)
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  // Si ya tiene una cita confirmada, cambiar de horario reagenda directo con
+  // el mismo nombre/correo que ya dio — no hace falta volver a pedírselo.
+  function handleSlotClick(slot) {
+    if (submitting) return
+    setSubmitError(null)
+    if (data.appointment) {
+      submitBooking(slot.id, {
+        name: data.appointment.patient_name,
+        email: data.appointment.patient_email,
+      })
+    } else {
+      setSelectedSlot(slot)
     }
   }
 
@@ -91,32 +106,36 @@ export default function PatientBookingPage() {
           </h1>
         </header>
 
-        {data.appointment && !showPicker && (
+        {data.appointment && (
           <div className="bg-white rounded-xl shadow p-5 mb-6">
-            <p className="text-emerald-700 font-medium mb-1">Sesión confirmada</p>
-            <p className="text-sm text-slate-600 capitalize mb-4">
+            <p className="text-emerald-700 font-medium mb-1">¡Cita confirmada!</p>
+            <p className="text-sm text-slate-600 capitalize mb-2">
               {formatSlotDateTime(data.appointment.start_time, data.timezone)}
             </p>
-            <button
-              type="button"
-              onClick={() => setShowPicker(true)}
-              className="text-sm text-indigo-600 hover:underline"
-            >
-              Elegir otro horario
-            </button>
+            <p className="text-xs text-slate-500 mb-3">Revisa tu correo para más detalles.</p>
+            {submitError && <p className="text-sm text-red-600 mb-2">{submitError}</p>}
+            {!showPicker && (
+              <button
+                type="button"
+                onClick={() => setShowPicker(true)}
+                className="text-sm text-indigo-600 hover:underline"
+              >
+                ¿Te equivocaste de horario? Elige otro aquí
+              </button>
+            )}
           </div>
         )}
 
         {showPicker && (
           <div className="bg-white rounded-xl shadow p-5">
+            {submitting && data.appointment && (
+              <p className="text-sm text-slate-500 mb-3">Agendando…</p>
+            )}
             <SlotPicker
               days={days}
               timezone={data.timezone}
               selectedISO={selectedSlot?.startISO}
-              onSelect={(slot) => {
-                setSelectedSlot(slot)
-                setSubmitError(null)
-              }}
+              onSelect={handleSlotClick}
             />
           </div>
         )}
@@ -133,7 +152,7 @@ export default function PatientBookingPage() {
             setSelectedSlot(null)
             setSubmitError(null)
           }}
-          onConfirm={handleConfirm}
+          onConfirm={({ name, email }) => submitBooking(selectedSlot.id, { name, email })}
         />
       )}
     </div>
