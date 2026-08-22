@@ -3,13 +3,14 @@ import { fromZonedTime, format as formatTz } from 'date-fns-tz'
 
 const DAY_START_HOUR = 7
 const DAY_END_HOUR = 21
+const GRID_STEP_MINUTES = 60 // horas cerradas (7:00, 8:00…) — fase 2: hacerlo configurable (ej. cada 30 min)
 
 // Genera, por cada uno de los 7 días a partir de weekStart, las franjas
-// candidatas de exactamente `durationMinutes` entre las DAY_START_HOUR y
-// DAY_END_HOUR (hora de la psicóloga). Son solo candidatas — el widget las
-// cruza con los eventos reales de Google para saber cuáles ya están
-// ocupadas.
-export function buildWeekDays(weekStart, timezone, durationMinutes) {
+// candidatas de exactamente `durationMinutes`, arrancando en punto (7:00,
+// 8:00…) entre DAY_START_HOUR y DAY_END_HOUR (hora de la psicóloga). Son
+// solo candidatas — el widget las cruza con los eventos reales de Google
+// para saber cuáles ya están ocupadas.
+export function buildWeekDays(weekStart, timezone, durationMinutes, stepMinutes = GRID_STEP_MINUTES) {
   const days = []
 
   for (let i = 0; i < 7; i++) {
@@ -32,7 +33,7 @@ export function buildWeekDays(weekStart, timezone, durationMinutes) {
         startISO: cursor.toISOString(),
         endISO: addMinutes(cursor, durationMinutes).toISOString(),
       })
-      cursor = addMinutes(cursor, durationMinutes)
+      cursor = addMinutes(cursor, stepMinutes)
     }
     days.push({ date: dateKey, slots })
   }

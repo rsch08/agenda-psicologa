@@ -31,7 +31,8 @@ create table if not exists google_tokens (
   token_type text,
   expiry_date bigint,
   connected_email text,
-  calendar_id text not null default 'primary',
+  calendar_id text not null default 'primary', -- dónde se crean los eventos al agendar
+  busy_calendar_ids text[] not null default array['primary'], -- cuáles se revisan para "ocupado" en el widget
   updated_at timestamptz not null default now(),
   constraint google_tokens_singleton check (id)
 );

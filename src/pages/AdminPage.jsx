@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import GoogleConnectCard from '../components/GoogleConnectCard.jsx'
+import CalendarSourcesCard from '../components/CalendarSourcesCard.jsx'
 import SettingsForm from '../components/SettingsForm.jsx'
 import PatientLinksList from '../components/PatientLinksList.jsx'
 import NewPatientLinkFlow from '../components/NewPatientLinkFlow.jsx'
@@ -143,6 +144,8 @@ export default function AdminPage() {
           onDisconnect={handleDisconnect}
           disconnecting={disconnecting}
         />
+
+        <CalendarSourcesCard />
 
         <PatientLinksList links={links} timezone={settings?.timezone} />
 
