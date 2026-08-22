@@ -41,10 +41,13 @@ export default function CalendarWidget({ timezone, durationMinutes, selected, on
     }
   }, [weekStart])
 
-  const days = useMemo(
-    () => buildWeekDays(weekStart, timezone || 'America/Bogota', durationMinutes || 50),
-    [weekStart, timezone, durationMinutes],
-  )
+  const { days, buildError } = useMemo(() => {
+    try {
+      return { days: buildWeekDays(weekStart, timezone || 'America/Mexico_City', durationMinutes || 50), buildError: null }
+    } catch (err) {
+      return { days: [], buildError: err.message }
+    }
+  }, [weekStart, timezone, durationMinutes])
 
   const selectedKeys = useMemo(() => new Set(selected.map((s) => s.start_time)), [selected])
   const now = useMemo(() => new Date(), [])
@@ -71,8 +74,13 @@ export default function CalendarWidget({ timezone, durationMinutes, selected, on
 
       {loading && <p className="text-sm text-slate-500">Cargando tu calendario…</p>}
       {error && <p className="text-sm text-red-600">{error}</p>}
+      {buildError && (
+        <p className="text-sm text-red-600">
+          {buildError} — revisa la zona horaria en Ajustes.
+        </p>
+      )}
 
-      {!loading && !error && (
+      {!loading && !error && !buildError && (
         <div className="space-y-4 max-h-96 overflow-y-auto pr-1">
           {days.map((day) => (
             <div key={day.date}>

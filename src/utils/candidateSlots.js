@@ -18,6 +18,13 @@ export function buildWeekDays(weekStart, timezone, durationMinutes) {
     const dayStart = fromZonedTime(`${dateKey}T${pad(DAY_START_HOUR)}:00:00`, timezone)
     const dayEnd = fromZonedTime(`${dateKey}T${pad(DAY_END_HOUR)}:00:00`, timezone)
 
+    // Una zona horaria inválida no truena aquí — fromZonedTime regresa
+    // "Invalid Date" en silencio, y el while de abajo nunca entra, dando
+    // 0 horarios sin ningún aviso. Mejor fallar fuerte y claro.
+    if (Number.isNaN(dayStart.getTime()) || Number.isNaN(dayEnd.getTime())) {
+      throw new Error(`Zona horaria inválida: "${timezone}"`)
+    }
+
     const slots = []
     let cursor = dayStart
     while (addMinutes(cursor, durationMinutes) <= dayEnd) {

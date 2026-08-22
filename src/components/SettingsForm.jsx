@@ -1,5 +1,18 @@
 import { useEffect, useState } from 'react'
 
+const TIMEZONE_OPTIONS = [
+  { value: 'America/Mexico_City', label: 'Ciudad de México' },
+  { value: 'America/Tijuana', label: 'Tijuana' },
+  { value: 'America/Cancun', label: 'Cancún' },
+  { value: 'America/Bogota', label: 'Bogotá' },
+  { value: 'America/Lima', label: 'Lima' },
+  { value: 'America/Santiago', label: 'Santiago' },
+  { value: 'America/Argentina/Buenos_Aires', label: 'Buenos Aires' },
+  { value: 'America/New_York', label: 'Nueva York' },
+  { value: 'America/Los_Angeles', label: 'Los Ángeles' },
+  { value: 'Europe/Madrid', label: 'Madrid' },
+]
+
 export default function SettingsForm({ initialSettings, onSave, saving, saveError }) {
   const [settings, setSettings] = useState(initialSettings)
 
@@ -26,13 +39,21 @@ export default function SettingsForm({ initialSettings, onSave, saving, saveErro
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-slate-600 mb-1">Zona horaria (IANA)</label>
-        <input
+        <label className="block text-xs font-medium text-slate-600 mb-1">Zona horaria</label>
+        <select
           value={settings.timezone}
           onChange={(e) => setSettings({ ...settings, timezone: e.target.value })}
-          placeholder="America/Bogota"
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-        />
+          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm bg-white"
+        >
+          {!TIMEZONE_OPTIONS.some((tz) => tz.value === settings.timezone) && (
+            <option value={settings.timezone}>{settings.timezone}</option>
+          )}
+          {TIMEZONE_OPTIONS.map((tz) => (
+            <option key={tz.value} value={tz.value}>
+              {tz.label}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div>

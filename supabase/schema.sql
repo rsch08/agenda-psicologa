@@ -12,7 +12,7 @@ create extension if not exists "pgcrypto";
 create table if not exists settings (
   id boolean primary key default true,
   session_duration_minutes integer not null default 50,
-  timezone text not null default 'America/Bogota',
+  timezone text not null default 'America/Mexico_City',
   psychologist_name text not null default '',
   updated_at timestamptz not null default now(),
   constraint settings_singleton check (id)
