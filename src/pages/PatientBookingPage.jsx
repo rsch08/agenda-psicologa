@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import SlotPicker from '../components/SlotPicker.jsx'
 import BookingForm from '../components/BookingForm.jsx'
+import WelcomeMessage from '../components/WelcomeMessage.jsx'
 import { formatSlotDateTime } from '../utils/format.js'
 import { groupSlotsByDay } from '../utils/candidateSlots.js'
 
@@ -125,6 +126,8 @@ export default function PatientBookingPage() {
             )}
           </div>
         )}
+
+        {showPicker && <WelcomeMessage />}
 
         {showPicker && (
           <div className="bg-white rounded-xl shadow p-5">
