@@ -1,6 +1,7 @@
 import { formatDayLabel, formatSlotTime } from './format.js'
 
-// Formato de WhatsApp: *texto* se ve en negritas, "- " se ve como viñeta.
+// Formato de WhatsApp: *texto* se ve en negritas. Cada día: la fecha en
+// negritas en su propio renglón, y abajo sus horarios separados por coma.
 export function buildPatientPackageWhatsAppText({ patientName, days, timezone, url }) {
   const lines = []
   lines.push(`Hola ${patientName}, estos son los horarios que tengo disponibles para tu sesión conmigo:`)
@@ -8,10 +9,11 @@ export function buildPatientPackageWhatsAppText({ patientName, days, timezone, u
 
   for (const day of days) {
     const times = day.slots.map((s) => formatSlotTime(s.startISO, timezone)).join(', ')
-    lines.push(`- *${formatDayLabel(day.date)}*: ${times}`)
+    lines.push(`*${formatDayLabel(day.date)}*`)
+    lines.push(times)
+    lines.push('')
   }
 
-  lines.push('')
   lines.push(`Agenda aquí: ${url}`)
   return lines.join('\n')
 }
