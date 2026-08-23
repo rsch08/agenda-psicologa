@@ -6,7 +6,7 @@ import { formatDayLabel, formatSlotTime } from '../utils/format.js'
 export default function SlotPicker({ days, timezone, onSelect, selectedISO }) {
   if (days.length === 0) {
     return (
-      <p className="text-slate-500 text-sm py-6">
+      <p className="text-muted text-sm py-6">
         No hay horarios disponibles por ahora. Vuelve a revisar más tarde.
       </p>
     )
@@ -16,7 +16,7 @@ export default function SlotPicker({ days, timezone, onSelect, selectedISO }) {
     <div className="space-y-5">
       {days.map((day) => (
         <div key={day.date}>
-          <h3 className="text-sm font-semibold text-slate-600 capitalize mb-2">
+          <h3 className="font-mono text-xs uppercase tracking-widest text-muted capitalize mb-2">
             {formatDayLabel(day.date)}
           </h3>
           <div className="flex flex-wrap gap-2">
@@ -25,10 +25,10 @@ export default function SlotPicker({ days, timezone, onSelect, selectedISO }) {
                 key={slot.startISO}
                 type="button"
                 onClick={() => onSelect(slot)}
-                className={`px-3 py-2 rounded-lg border text-sm transition ${
+                className={`px-3 py-2 rounded-sm border font-mono text-sm transition ${
                   selectedISO === slot.startISO
-                    ? 'bg-indigo-600 border-indigo-600 text-white'
-                    : 'border-slate-300 hover:border-indigo-400 hover:text-indigo-600'
+                    ? 'bg-thread border-thread text-paper-2'
+                    : 'border-line text-ink hover:border-thread hover:text-thread'
                 }`}
               >
                 {formatSlotTime(slot.startISO, timezone)}

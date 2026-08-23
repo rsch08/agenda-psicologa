@@ -9,6 +9,7 @@ import { cleanPersonName } from '../utils/name.js'
 export default function NewPatientLinkFlow({ settings, onDone, onCancel }) {
   const [step, setStep] = useState('name') // name -> widget -> share
   const [patientName, setPatientName] = useState('')
+  const [meetingType, setMeetingType] = useState('virtual')
   const [selected, setSelected] = useState([])
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState(null)
@@ -28,7 +29,11 @@ export default function NewPatientLinkFlow({ settings, onDone, onCancel }) {
     try {
       const data = await adminFetch('/api/admin/patient-links', {
         method: 'POST',
-        body: JSON.stringify({ patient_name: cleanPersonName(patientName), slots: selected }),
+        body: JSON.stringify({
+          patient_name: cleanPersonName(patientName),
+          slots: selected,
+          meeting_type: meetingType,
+        }),
       })
       setResult(data)
       setStep('share')
@@ -40,24 +45,51 @@ export default function NewPatientLinkFlow({ settings, onDone, onCancel }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-slate-900/40 flex items-center justify-center p-4 z-10">
-      <div className="bg-white rounded-xl shadow-lg max-w-lg w-full p-6">
+    <div className="fixed inset-0 bg-ink/40 flex items-center justify-center p-4 z-10">
+      <div className="bg-paper border border-line rounded-sm shadow-lg max-w-lg w-full p-6">
         {step === 'name' && (
           <>
-            <h2 className="text-lg font-semibold mb-1">Nuevo horario</h2>
-            <p className="text-sm text-slate-500 mb-4">¿Para qué paciente es?</p>
+            <h2 className="font-display font-medium text-lg text-ink mb-1">Nuevo horario</h2>
+            <p className="text-sm text-muted mb-4">¿Para qué paciente es?</p>
             <input
               autoFocus
               value={patientName}
               onChange={(e) => setPatientName(e.target.value)}
               placeholder="Nombre del paciente"
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full rounded-sm border border-line bg-paper-2 px-3 py-2 text-sm text-ink mb-4 focus:outline-none focus:ring-1 focus:ring-thread"
             />
+
+            <p className="text-sm text-muted mb-2">¿Presencial o virtual?</p>
+            <div className="flex gap-2 mb-4">
+              <button
+                type="button"
+                onClick={() => setMeetingType('presencial')}
+                className={`flex-1 rounded-sm border py-2 font-mono text-sm tracking-wide ${
+                  meetingType === 'presencial'
+                    ? 'border-thread bg-tint1 text-thread'
+                    : 'border-line text-muted hover:bg-paper-2'
+                }`}
+              >
+                Presencial
+              </button>
+              <button
+                type="button"
+                onClick={() => setMeetingType('virtual')}
+                className={`flex-1 rounded-sm border py-2 font-mono text-sm tracking-wide ${
+                  meetingType === 'virtual'
+                    ? 'border-thread bg-tint1 text-thread'
+                    : 'border-line text-muted hover:bg-paper-2'
+                }`}
+              >
+                Virtual
+              </button>
+            </div>
+
             <div className="flex gap-2">
               <button
                 type="button"
                 onClick={onCancel}
-                className="flex-1 rounded-lg border border-slate-300 py-2 text-sm font-medium hover:bg-slate-50"
+                className="flex-1 rounded-sm border border-line py-2 font-mono text-sm tracking-wide text-ink hover:bg-paper-2"
               >
                 Cancelar
               </button>
@@ -68,7 +100,7 @@ export default function NewPatientLinkFlow({ settings, onDone, onCancel }) {
                   setPatientName((n) => cleanPersonName(n))
                   setStep('widget')
                 }}
-                className="flex-1 rounded-lg bg-indigo-600 text-white py-2 text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
+                className="flex-1 rounded-sm bg-thread text-paper-2 font-mono text-sm tracking-wide py-2 hover:bg-ink disabled:opacity-50"
               >
                 Siguiente
               </button>
@@ -78,8 +110,10 @@ export default function NewPatientLinkFlow({ settings, onDone, onCancel }) {
 
         {step === 'widget' && (
           <>
-            <h2 className="text-lg font-semibold mb-1">Elige los horarios para {patientName}</h2>
-            <p className="text-sm text-slate-500 mb-3">
+            <h2 className="font-display font-medium text-lg text-ink mb-1">
+              Elige los horarios para {patientName}
+            </h2>
+            <p className="text-sm text-muted mb-3">
               Los tachados ya están ocupados en tu calendario. Haz clic en los que quieras ofrecerle.
             </p>
             <CalendarWidget
@@ -90,12 +124,12 @@ export default function NewPatientLinkFlow({ settings, onDone, onCancel }) {
             />
             {error && <p className="text-sm text-red-600 mt-3">{error}</p>}
             <div className="flex items-center justify-between mt-4">
-              <p className="text-sm text-slate-500">{selected.length} seleccionados</p>
+              <p className="text-sm text-muted">{selected.length} seleccionados</p>
               <div className="flex gap-2">
                 <button
                   type="button"
                   onClick={onCancel}
-                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium hover:bg-slate-50"
+                  className="rounded-sm border border-line px-4 py-2 font-mono text-sm tracking-wide text-ink hover:bg-paper-2"
                 >
                   Cancelar
                 </button>
@@ -103,7 +137,7 @@ export default function NewPatientLinkFlow({ settings, onDone, onCancel }) {
                   type="button"
                   disabled={selected.length === 0 || creating}
                   onClick={handleCreate}
-                  className="rounded-lg bg-indigo-600 text-white px-4 py-2 text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
+                  className="rounded-sm bg-thread text-paper-2 font-mono text-sm tracking-wide px-4 py-2 hover:bg-ink disabled:opacity-50"
                 >
                   {creating ? 'Creando…' : 'Crear'}
                 </button>
@@ -114,9 +148,11 @@ export default function NewPatientLinkFlow({ settings, onDone, onCancel }) {
 
         {step === 'share' && result && (
           <>
-            <h2 className="text-lg font-semibold mb-1">Listo — link para {patientName}</h2>
-            <p className="text-sm text-slate-500 mb-3">Compártelo directo, no necesita contraseña.</p>
-            <div className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm break-all mb-4">
+            <h2 className="font-display font-medium text-lg text-ink mb-1">
+              Listo — link para {patientName}
+            </h2>
+            <p className="text-sm text-muted mb-3">Compártelo directo, no necesita contraseña.</p>
+            <div className="bg-paper-2 border border-line rounded-sm px-3 py-2 text-sm text-ink break-all mb-4">
               {result.url}
             </div>
             <CopyToWhatsAppButton
@@ -127,7 +163,6 @@ export default function NewPatientLinkFlow({ settings, onDone, onCancel }) {
                   settings?.timezone,
                 ),
                 timezone: settings?.timezone,
-                psychologistName: settings?.psychologist_name,
                 url: result.url,
               })}
               label="Copiar mensaje"
@@ -135,7 +170,7 @@ export default function NewPatientLinkFlow({ settings, onDone, onCancel }) {
             <button
               type="button"
               onClick={onDone}
-              className="w-full rounded-lg border border-slate-300 py-2 text-sm font-medium hover:bg-slate-50 mt-4"
+              className="w-full rounded-sm border border-line py-2 font-mono text-sm tracking-wide text-ink hover:bg-paper-2 mt-4"
             >
               Cerrar
             </button>

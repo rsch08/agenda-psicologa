@@ -26,6 +26,7 @@ export default async function handler(req, res) {
 
   res.status(200).json({
     patient_name: link.patient_name,
+    meeting_type: link.meeting_type,
     slots: (link.offered_slots || []).sort((a, b) => a.start_time.localeCompare(b.start_time)),
     appointment,
     timezone: settings?.timezone,

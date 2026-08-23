@@ -1,28 +1,19 @@
-import { formatDayLabel, formatSlotTime, formatSlotDateTime } from './format.js'
+import { formatDayLabel, formatSlotTime } from './format.js'
 
-export function buildPatientPackageWhatsAppText({ patientName, days, timezone, psychologistName, url }) {
+// Formato de WhatsApp: *texto* se ve en negritas, "- " se ve como viñeta.
+export function buildPatientPackageWhatsAppText({ patientName, days, timezone, url }) {
   const lines = []
-  lines.push(
-    `Hola ${patientName}, estos son los horarios que tengo disponibles para tu sesión${
-      psychologistName ? ` con ${psychologistName}` : ''
-    }:`,
-  )
+  lines.push(`Hola ${patientName}, estos son los horarios que tengo disponibles para tu sesión conmigo:`)
   lines.push('')
 
   for (const day of days) {
     const times = day.slots.map((s) => formatSlotTime(s.startISO, timezone)).join(', ')
-    lines.push(`${formatDayLabel(day.date)}: ${times}`)
+    lines.push(`- *${formatDayLabel(day.date)}*: ${times}`)
   }
 
   lines.push('')
   lines.push(`Agenda aquí: ${url}`)
   return lines.join('\n')
-}
-
-export function buildConfirmationWhatsAppText({ startISO, timezone, psychologistName, patientName }) {
-  const when = formatSlotDateTime(startISO, timezone)
-  const withWhom = psychologistName ? ` con ${psychologistName}` : ''
-  return `Hola, soy ${patientName}. Confirmo mi sesión${withWhom} el ${when}.`
 }
 
 export function buildWhatsAppShareUrl(text) {

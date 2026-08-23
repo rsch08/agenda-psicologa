@@ -2,7 +2,8 @@ import { requireAdmin } from '../../lib/adminAuth.js'
 import { supabaseAdmin } from '../../lib/supabaseAdmin.js'
 
 // GET /api/admin/settings — ajustes actuales.
-// POST /api/admin/settings { session_duration_minutes, timezone, psychologist_name }
+// POST /api/admin/settings { session_duration_minutes, timezone, psychologist_name,
+//   office_address, in_person_color_id, virtual_color_id }
 export default async function handler(req, res) {
   if (!requireAdmin(req, res)) return
 
@@ -17,7 +18,14 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
-    const { session_duration_minutes, timezone, psychologist_name } = req.body ?? {}
+    const {
+      session_duration_minutes,
+      timezone,
+      psychologist_name,
+      office_address,
+      in_person_color_id,
+      virtual_color_id,
+    } = req.body ?? {}
 
     const { error } = await supabaseAdmin
       .from('settings')
@@ -25,6 +33,9 @@ export default async function handler(req, res) {
         session_duration_minutes,
         timezone,
         psychologist_name,
+        office_address,
+        in_person_color_id,
+        virtual_color_id,
         updated_at: new Date().toISOString(),
       })
       .eq('id', true)

@@ -24,7 +24,7 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
-    const { patient_name, slots } = req.body ?? {}
+    const { patient_name, slots, meeting_type: meetingType } = req.body ?? {}
 
     if (!patient_name || !String(patient_name).trim()) {
       return res.status(400).json({ error: 'Falta el nombre del paciente.' })
@@ -32,12 +32,15 @@ export default async function handler(req, res) {
     if (!Array.isArray(slots) || slots.length === 0) {
       return res.status(400).json({ error: 'Selecciona al menos un horario.' })
     }
+    if (!['presencial', 'virtual'].includes(meetingType)) {
+      return res.status(400).json({ error: 'Falta indicar si la sesión es presencial o virtual.' })
+    }
 
     const token = generateToken()
 
     const { data: link, error: linkErr } = await supabaseAdmin
       .from('patient_links')
-      .insert({ patient_name: String(patient_name).trim(), token })
+      .insert({ patient_name: String(patient_name).trim(), token, meeting_type: meetingType })
       .select()
       .single()
     if (linkErr) return res.status(500).json({ error: linkErr.message })

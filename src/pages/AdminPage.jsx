@@ -84,7 +84,7 @@ export default function AdminPage() {
   if (checking) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-sm text-slate-500">Cargando…</p>
+        <p className="text-sm text-muted font-mono">Cargando…</p>
       </div>
     )
   }
@@ -92,9 +92,11 @@ export default function AdminPage() {
   if (!authorized) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="max-w-sm w-full bg-white rounded-xl shadow p-6 text-center space-y-3">
-          <h1 className="text-lg font-semibold">Agenda Psicóloga</h1>
-          <p className="text-sm text-slate-500">Panel de administración.</p>
+        <div className="max-w-sm w-full bg-paper-2 border border-line rounded-sm p-6 text-center space-y-3">
+          <span className="font-mono text-xs uppercase tracking-[0.18em] text-thread">
+            Agenda Psicóloga
+          </span>
+          <h1 className="font-display font-medium text-xl text-ink">Panel de administración</h1>
           {errorParam === 'unauthorized' && (
             <p className="text-sm text-red-600">
               Esa cuenta de Google no tiene acceso a este panel.
@@ -105,7 +107,7 @@ export default function AdminPage() {
           )}
           <a
             href="/api/auth/login"
-            className="inline-flex w-full items-center justify-center rounded-lg bg-indigo-600 text-white py-2 text-sm font-medium hover:bg-indigo-700"
+            className="inline-flex w-full items-center justify-center rounded-sm bg-thread text-paper-2 font-mono text-sm tracking-wide py-3 hover:bg-ink"
           >
             Iniciar sesión con Google
           </a>
@@ -119,10 +121,14 @@ export default function AdminPage() {
       <div className="max-w-2xl mx-auto space-y-6">
         <header className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-semibold">Agenda Psicóloga</h1>
-            <p className="text-sm text-slate-500 mt-1">Panel de administración</p>
+            <span className="font-mono text-xs uppercase tracking-[0.18em] text-thread">
+              Agenda Psicóloga
+            </span>
+            <h1 className="font-display font-medium text-2xl text-ink mt-1">
+              Panel de administración
+            </h1>
           </div>
-          <a href="/api/auth/logout" className="text-sm text-slate-500 hover:underline">
+          <a href="/api/auth/logout" className="text-sm text-muted hover:text-thread">
             Cerrar sesión
           </a>
         </header>
@@ -134,7 +140,7 @@ export default function AdminPage() {
         <button
           type="button"
           onClick={() => setShowNewFlow(true)}
-          className="w-full rounded-xl bg-indigo-600 text-white py-4 text-base font-semibold hover:bg-indigo-700 shadow"
+          className="w-full rounded-sm bg-thread text-paper-2 font-mono text-base tracking-wide py-4 hover:bg-ink transition"
         >
           + Nuevo horario
         </button>

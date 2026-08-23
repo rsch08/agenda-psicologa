@@ -11,18 +11,38 @@ uno, con cada paciente. Ver `SPEC.md` para el spec completo.
 2. Le da clic a **"+ Nuevo horario"**, escribe el nombre del paciente, y ve
    un widget con su calendario real: los huecos ocupados salen tachados. Le
    da clic a mano a los 4-5 horarios que quiere ofrecerle.
+   También elige ahí si la sesión es **presencial o virtual**.
 3. Al crear el paquete, la app genera un **link único para ese paciente**
    (sin contraseña, con un código imposible de adivinar) y una pantalla
    lista para copiar/compartir por WhatsApp.
 4. El paciente entra a su link y ve *solo* los horarios que le asignaron, en
-   una sola vista. Escoge uno, llena nombre/correo/teléfono, y queda
-   agendado — Google Calendar le manda la invitación por correo
-   automáticamente. Si se arrepiente, puede volver a su link y elegir otro
-   de los mismos horarios que le tocaron (se cancela el anterior y se crea
-   el nuevo evento).
+   una sola vista. Escoge uno, llena nombre/correo, y queda agendado —
+   Google Calendar le manda la invitación por correo automáticamente. Si se
+   arrepiente, puede volver a su link y elegir otro de los mismos horarios
+   que le tocaron (se cancela el anterior y se crea el nuevo evento).
+5. Si la sesión es virtual, la app crea un **link único de Google Meet**
+   para esa cita (uno distinto por cada paciente, no un link fijo
+   reutilizado) y lo pone en el evento. Si es presencial, pone la dirección
+   del consultorio (configurable en Ajustes). En los dos casos, la
+   psicóloga queda agregada como invitada al evento junto con el paciente,
+   así que a ella también le llega la notificación de Google Calendar
+   cuando alguien agenda.
 
 No hay un link público genérico — cada paciente recibe el suyo, con
 exactamente los horarios que la psicóloga decidió a mano para esa persona.
+
+### Sobre el control de acceso a Google Meet
+
+La psicóloga pidió poder aceptar ella misma a cada paciente antes de
+dejarlo entrar a la videollamada. Google Meet solo deja configurar eso
+("Restringido", con aprobación manual del anfitrión) en cuentas de Google
+Workspace — no existe en una cuenta de Gmail normal. Por eso el link de
+Meet se crea con la API de Meet directamente (no como `conferenceData` del
+evento de Calendar) y se pega como texto en la ubicación del evento: así el
+paciente sigue recibiendo la invitación automática por correo, pero al
+entrar a la videollamada siempre tiene que tocar "Pedir unirme" y la
+psicóloga lo admite a mano — igual que si fuera cualquier invitado externo
+tocando a la puerta de una sala nueva.
 
 ## Stack
 
@@ -50,7 +70,9 @@ obtener por API/MCP: **Project Settings → API** en el dashboard de Supabase
 
 1. Ve a [Google Cloud Console](https://console.cloud.google.com/) y crea un
    proyecto (o usa uno existente).
-2. **APIs & Services → Library**: activa la **Google Calendar API**.
+2. **APIs & Services → Library**: activa la **Google Calendar API** y la
+   **Google Meet API** (esta última es la que genera el link único de
+   videollamada por paciente).
 3. **APIs & Services → OAuth consent screen / Google Auth Platform**: modo
    "External", agrega los correos autorizados (los mismos que vas a poner
    en `ADMIN_EMAILS`) como *test users*. Cuando quieras que la conexión no
@@ -114,8 +136,15 @@ vercel dev
    crear eventos — esto es independiente de con qué correo iniciaste sesión
    arriba, así que si varias personas entran a probar el panel, el
    calendario conectado no cambia solo porque alguien más se loguea.
-3. **+ Nuevo horario** → nombre del paciente → elige sus horarios en el
-   widget → Crear → comparte el link por WhatsApp.
+3. **+ Nuevo horario** → nombre del paciente → presencial o virtual → elige
+   sus horarios en el widget → Crear → comparte el link por WhatsApp.
+
+> **Importante después de este cambio**: se agregó un permiso nuevo
+> (`meetings.space.created`, para crear los links de Google Meet) al flujo
+> de "Conectar con Google". Si ya habías conectado el calendario antes de
+> este deploy, hay que darle **"Conectar con Google" de nuevo una vez** en
+> `/admin` para volver a autorizar y que incluya ese permiso — si no, las
+> citas virtuales se agendan bien pero sin link de Meet.
 
 ## Estructura
 
@@ -133,7 +162,7 @@ api/
   patient/[token]/book.js        # público — agenda (o cambia) su horario
 lib/
   supabaseAdmin.js               # cliente con la service role key
-  googleClient.js                 # OAuth2 (login + calendar) + cliente de Calendar
+  googleClient.js                 # OAuth2 (login + calendar), cliente de Calendar y de Meet
   session.js                      # cookie de sesión firmada (HMAC)
   adminAuth.js                    # valida la sesión contra ADMIN_EMAILS
 src/
@@ -154,5 +183,11 @@ supabase/schema.sql              # esquema + RLS
 - Los horarios se muestran en la zona horaria de la psicóloga, no en la del
   navegador de la paciente.
 - Recordatorio automático 24h antes: no implementado.
+- La notificación a la psicóloga es la que manda Google Calendar por ser
+  invitada al evento (no hay correo/WhatsApp propio de la app).
+- Notificación por WhatsApp automática al agendar: no implementado — el
+  envío por WhatsApp solo se puede armar como mensaje para que la
+  psicóloga lo mande a mano (la automatización real requiere WhatsApp
+  Business Platform de pago, no la app gratuita que ella usa).
 - Multi-tenant (vender esto a otras psicólogas, cada una con su propio
   calendario) — anotado como visión a futuro en `SPEC.md`, no construido.

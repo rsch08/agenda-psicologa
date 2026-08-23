@@ -77,7 +77,7 @@ export default function PatientBookingPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-sm text-slate-500">Cargando…</p>
+        <p className="text-sm text-muted font-mono">Cargando…</p>
       </div>
     )
   }
@@ -98,28 +98,43 @@ export default function PatientBookingPage() {
   return (
     <div className="min-h-screen p-4 sm:p-8">
       <div className="max-w-2xl mx-auto">
-        <header className="mb-6">
-          <h1 className="text-xl font-semibold">
+        <header className="mb-8">
+          <span className="font-mono text-xs uppercase tracking-[0.18em] text-thread">
+            Agenda tu sesión
+          </span>
+          <h1 className="font-display font-medium text-2xl sm:text-3xl tracking-tight text-ink mt-2">
             Hola {data.patient_name}
-            {data.psychologist_name
-              ? `, agenda tu sesión con ${data.psychologist_name}`
-              : ', agenda tu sesión'}
+            {data.psychologist_name ? `, agenda tu sesión con ${data.psychologist_name}` : ''}
           </h1>
         </header>
 
         {data.appointment && (
-          <div className="bg-white rounded-xl shadow p-5 mb-6">
-            <p className="text-emerald-700 font-medium mb-1">¡Cita confirmada!</p>
-            <p className="text-sm text-slate-600 capitalize mb-2">
+          <div className="bg-paper-2 border border-line rounded-sm p-5 sm:p-6 mb-6">
+            <p className="text-thread font-medium mb-1">¡Cita confirmada!</p>
+            <p className="text-sm text-ink capitalize mb-2">
               {formatSlotDateTime(data.appointment.start_time, data.timezone)}
             </p>
-            <p className="text-xs text-slate-500 mb-3">Revisa tu correo para más detalles.</p>
+            {data.appointment.meeting_link ? (
+              <p className="text-sm mb-3">
+                Link de la sesión:{' '}
+                <a
+                  href={data.appointment.meeting_link}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-thread hover:underline break-all"
+                >
+                  {data.appointment.meeting_link}
+                </a>
+              </p>
+            ) : (
+              <p className="text-xs text-muted mb-3">Revisa tu correo para más detalles.</p>
+            )}
             {submitError && <p className="text-sm text-red-600 mb-2">{submitError}</p>}
             {!showPicker && (
               <button
                 type="button"
                 onClick={() => setShowPicker(true)}
-                className="text-sm text-indigo-600 hover:underline"
+                className="font-mono text-xs tracking-wide text-ink border-b border-line hover:text-thread hover:border-thread pb-0.5"
               >
                 ¿Te equivocaste de horario? Elige otro aquí
               </button>
@@ -130,9 +145,9 @@ export default function PatientBookingPage() {
         {showPicker && <WelcomeMessage />}
 
         {showPicker && (
-          <div className="bg-white rounded-xl shadow p-5">
+          <div className="bg-paper-2 border border-line rounded-sm p-5 sm:p-6">
             {submitting && data.appointment && (
-              <p className="text-sm text-slate-500 mb-3">Agendando…</p>
+              <p className="text-sm text-muted font-mono mb-3">Agendando…</p>
             )}
             <SlotPicker
               days={days}

@@ -1,14 +1,16 @@
 export default function GoogleConnectCard({ status, onDisconnect, disconnecting }) {
   return (
-    <div className="bg-white rounded-xl shadow p-5">
-      <h2 className="text-sm font-semibold text-slate-700 mb-2">Google Calendar</h2>
+    <div className="bg-paper-2 border border-line rounded-sm p-5">
+      <h2 className="font-mono text-xs uppercase tracking-widest text-muted mb-2">
+        Google Calendar
+      </h2>
       {status?.connected ? (
         <div className="flex items-center justify-between gap-3 flex-wrap">
-          <p className="text-sm text-emerald-700">
+          <p className="text-sm text-thread">
             Conectado como <span className="font-medium">{status.connected_email}</span>
           </p>
           <div className="flex items-center gap-3">
-            <a href="/api/google-auth" className="text-sm text-indigo-600 hover:underline">
+            <a href="/api/google-auth" className="text-sm text-ink hover:text-thread">
               Reconectar
             </a>
             <button
@@ -23,12 +25,12 @@ export default function GoogleConnectCard({ status, onDisconnect, disconnecting 
         </div>
       ) : (
         <div className="flex items-center justify-between gap-3 flex-wrap">
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-muted">
             No conectado — todavía no puedes ver tu calendario real ni ofrecer horarios.
           </p>
           <a
             href="/api/google-auth"
-            className="inline-flex items-center px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700"
+            className="inline-flex items-center px-3 py-2 rounded-sm bg-thread text-paper-2 font-mono text-sm tracking-wide hover:bg-ink"
           >
             Conectar con Google
           </a>

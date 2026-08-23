@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { addDays, startOfWeek } from 'date-fns'
+import { addDays, startOfDay } from 'date-fns'
 import { adminFetch } from '../utils/adminApi.js'
 import { buildWeekDays } from '../utils/candidateSlots.js'
 import { formatDayLabel, formatSlotTime } from '../utils/format.js'
@@ -9,13 +9,13 @@ function overlaps(aStart, aEnd, bStart, bEnd) {
 }
 
 export default function CalendarWidget({ timezone, durationMinutes, selected, onToggle }) {
-  const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }))
+  const [weekStart, setWeekStart] = useState(() => startOfDay(new Date()))
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  const thisWeekStart = useMemo(() => startOfWeek(new Date(), { weekStartsOn: 1 }), [])
-  const canGoBack = weekStart > thisWeekStart
+  const today = useMemo(() => startOfDay(new Date()), [])
+  const canGoBack = weekStart > today
 
   useEffect(() => {
     let cancelled = false
@@ -59,20 +59,20 @@ export default function CalendarWidget({ timezone, durationMinutes, selected, on
           type="button"
           disabled={!canGoBack}
           onClick={() => setWeekStart((w) => addDays(w, -7))}
-          className="px-3 py-1.5 rounded-lg border border-slate-300 text-sm disabled:opacity-40"
+          className="px-3 py-1.5 rounded-sm border border-line font-mono text-sm text-ink disabled:opacity-40"
         >
           ← Semana anterior
         </button>
         <button
           type="button"
           onClick={() => setWeekStart((w) => addDays(w, 7))}
-          className="px-3 py-1.5 rounded-lg border border-slate-300 text-sm"
+          className="px-3 py-1.5 rounded-sm border border-line font-mono text-sm text-ink hover:border-thread hover:text-thread"
         >
           Semana siguiente →
         </button>
       </div>
 
-      {loading && <p className="text-sm text-slate-500">Cargando tu calendario…</p>}
+      {loading && <p className="text-sm text-muted font-mono">Cargando tu calendario…</p>}
       {error && <p className="text-sm text-red-600">{error}</p>}
       {buildError && (
         <p className="text-sm text-red-600">
@@ -84,7 +84,7 @@ export default function CalendarWidget({ timezone, durationMinutes, selected, on
         <div className="space-y-4 max-h-96 overflow-y-auto pr-1">
           {days.map((day) => (
             <div key={day.date}>
-              <h4 className="text-xs font-semibold text-slate-500 capitalize mb-1.5">
+              <h4 className="font-mono text-xs uppercase tracking-widest text-muted capitalize mb-1.5">
                 {formatDayLabel(day.date)}
               </h4>
               <div className="flex flex-wrap gap-1.5">
@@ -102,7 +102,7 @@ export default function CalendarWidget({ timezone, durationMinutes, selected, on
                       <span
                         key={slot.startISO}
                         title={busyEvent ? busyEvent.summary : 'Ya pasó'}
-                        className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs text-slate-400 bg-slate-50 line-through"
+                        className="px-2.5 py-1.5 rounded-sm border border-line font-mono text-xs text-muted bg-paper line-through"
                       >
                         {formatSlotTime(slot.startISO, timezone)}
                       </span>
@@ -116,10 +116,10 @@ export default function CalendarWidget({ timezone, durationMinutes, selected, on
                       onClick={() =>
                         onToggle({ start_time: slot.startISO, end_time: slot.endISO })
                       }
-                      className={`px-2.5 py-1.5 rounded-lg border text-xs transition ${
+                      className={`px-2.5 py-1.5 rounded-sm border font-mono text-xs transition ${
                         isSelected
-                          ? 'bg-indigo-600 border-indigo-600 text-white'
-                          : 'border-slate-300 hover:border-indigo-400 hover:text-indigo-600'
+                          ? 'bg-thread border-thread text-paper-2'
+                          : 'border-line text-ink hover:border-thread hover:text-thread'
                       }`}
                     >
                       {formatSlotTime(slot.startISO, timezone)}

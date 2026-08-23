@@ -57,19 +57,21 @@ export default function CalendarSourcesCard() {
   if (loading || notConnected) return null
 
   return (
-    <div className="bg-white rounded-xl shadow p-5">
-      <h2 className="text-sm font-semibold text-slate-700 mb-1">Calendarios a revisar</h2>
-      <p className="text-xs text-slate-500 mb-3">
+    <div className="bg-paper-2 border border-line rounded-sm p-5">
+      <h2 className="font-mono text-xs uppercase tracking-widest text-muted mb-1">
+        Calendarios a revisar
+      </h2>
+      <p className="text-xs text-muted mb-3">
         Marca todos donde tengas compromisos (personal, trabajo…) — el widget los cruza todos
         para saber qué horas están libres de verdad.
       </p>
 
       {calendars.length === 0 ? (
-        <p className="text-sm text-slate-500">No se encontraron calendarios.</p>
+        <p className="text-sm text-muted">No se encontraron calendarios.</p>
       ) : (
         <div className="space-y-1.5">
           {calendars.map((cal) => (
-            <label key={cal.id} className="flex items-center gap-2 text-sm">
+            <label key={cal.id} className="flex items-center gap-2 text-sm text-ink">
               <input
                 type="checkbox"
                 checked={selected.includes(cal.id)}
@@ -88,7 +90,7 @@ export default function CalendarSourcesCard() {
         type="button"
         onClick={handleSave}
         disabled={saving || selected.length === 0}
-        className="mt-3 rounded-lg bg-indigo-600 text-white px-3 py-1.5 text-sm font-medium hover:bg-indigo-700 disabled:opacity-60"
+        className="mt-3 rounded-sm bg-thread text-paper-2 font-mono text-sm tracking-wide px-3 py-1.5 hover:bg-ink disabled:opacity-60"
       >
         {saving ? 'Guardando…' : saved ? 'Guardado ✓' : 'Guardar'}
       </button>

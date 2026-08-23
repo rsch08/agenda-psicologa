@@ -1,11 +1,11 @@
 import { supabaseAdmin } from '../../../lib/supabaseAdmin.js'
-import { getCalendarClient } from '../../../lib/googleClient.js'
+import { getCalendarClient, createMeetSpace } from '../../../lib/googleClient.js'
 
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 }
 
-// POST /api/patient/:token/book { offered_slot_id, name, email, phone }
+// POST /api/patient/:token/book { offered_slot_id, name, email }
 // — pública. Si el paciente ya tenía una cita confirmada de este mismo
 // link, la cancela (borra el evento de Google) antes de crear la nueva —
 // así puede cambiar de opinión entre los horarios que se le asignaron.
@@ -13,7 +13,7 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' })
 
   const { token } = req.query
-  const { offered_slot_id, name, email, phone } = req.body ?? {}
+  const { offered_slot_id, name, email } = req.body ?? {}
 
   if (!name || !String(name).trim()) return res.status(400).json({ error: 'Falta el nombre.' })
   if (!email || !isValidEmail(email)) return res.status(400).json({ error: 'Correo inválido.' })
@@ -31,6 +31,12 @@ export default async function handler(req, res) {
     const slot = (link.offered_slots || []).find((s) => s.id === offered_slot_id)
     if (!slot) return res.status(400).json({ error: 'Ese horario no pertenece a este link.' })
 
+    const { data: settings } = await supabaseAdmin
+      .from('settings')
+      .select('office_address, in_person_color_id, virtual_color_id')
+      .eq('id', true)
+      .maybeSingle()
+
     const googleClient = await getCalendarClient()
 
     const existingAppointment = (link.appointments || []).find((a) => a.status === 'confirmed')
@@ -43,17 +49,46 @@ export default async function handler(req, res) {
       await supabaseAdmin.from('appointments').delete().eq('id', existingAppointment.id)
     }
 
+    const isVirtual = link.meeting_type === 'virtual'
+
+    let meetingLink = null
+    let location
+    let description
+
+    if (isVirtual) {
+      try {
+        const space = googleClient ? await createMeetSpace() : null
+        meetingLink = space?.meetingUri || null
+      } catch (err) {
+        console.error('No se pudo crear el espacio de Meet', err)
+      }
+      location = meetingLink || undefined
+      description = meetingLink
+        ? `Sesión virtual. Únete aquí cuando sea la hora: ${meetingLink}\n\nEs normal que te pida esperar a que te admitan — solo toca "Pedir unirme".`
+        : undefined
+    } else {
+      location = settings?.office_address || undefined
+      description = location ? `Sesión presencial en ${location}.` : undefined
+    }
+
     let googleEventId = null
     if (googleClient) {
+      const attendees = [{ email }]
+      if (googleClient.connectedEmail && googleClient.connectedEmail.toLowerCase() !== email.toLowerCase()) {
+        attendees.push({ email: googleClient.connectedEmail })
+      }
+
       const { data: event } = await googleClient.calendar.events.insert({
         calendarId: googleClient.calendarId,
         sendUpdates: 'all',
         requestBody: {
           summary: `Sesión con ${name}`,
-          description: phone ? `Teléfono: ${phone}` : undefined,
+          description,
+          location,
+          colorId: isVirtual ? settings?.virtual_color_id : settings?.in_person_color_id,
           start: { dateTime: slot.start_time },
           end: { dateTime: slot.end_time },
-          attendees: [{ email }],
+          attendees,
         },
       })
       googleEventId = event.id
@@ -66,10 +101,10 @@ export default async function handler(req, res) {
         offered_slot_id: slot.id,
         patient_name: name,
         patient_email: email,
-        patient_phone: phone || null,
         start_time: slot.start_time,
         end_time: slot.end_time,
         google_event_id: googleEventId,
+        meeting_link: meetingLink,
       })
       .select()
       .single()

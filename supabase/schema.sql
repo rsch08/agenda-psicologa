@@ -14,6 +14,9 @@ create table if not exists settings (
   session_duration_minutes integer not null default 50,
   timezone text not null default 'America/Mexico_City',
   psychologist_name text not null default '',
+  office_address text not null default '', -- para citas presenciales
+  in_person_color_id text not null default '2', -- colorId de Google Calendar (Sage)
+  virtual_color_id text not null default '7', -- colorId de Google Calendar (Peacock)
   updated_at timestamptz not null default now(),
   constraint settings_singleton check (id)
 );
@@ -42,6 +45,7 @@ create table if not exists patient_links (
   id uuid primary key default gen_random_uuid(),
   patient_name text not null,
   token text not null unique,
+  meeting_type text not null default 'virtual' check (meeting_type in ('presencial', 'virtual')),
   created_at timestamptz not null default now()
 );
 
@@ -69,6 +73,7 @@ create table if not exists appointments (
   start_time timestamptz not null,
   end_time timestamptz not null,
   google_event_id text,
+  meeting_link text, -- link de Meet, solo si la modalidad es virtual
   status text not null default 'confirmed' check (status in ('confirmed', 'cancelled')),
   created_at timestamptz not null default now(),
   constraint appointments_valid_range check (start_time < end_time)
